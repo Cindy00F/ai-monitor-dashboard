@@ -273,7 +273,8 @@ function RadarChart({ radar }: { radar: Radar }) {
 }
 
 function ContributionsCard({ view }: { view: ViewData }) {
-  const max = Math.max(1, ...view.heatmap.map((day) => day.count))
+  const visibleDays = view.heatmap.slice(-56)
+  const max = Math.max(1, ...visibleDays.map((day) => day.count))
   const best = Math.max(0, ...view.heatmap.map((day) => day.count))
   return (
     <TiltCard className="contribution-card" label="Sampled commit activity and normalized radar">
@@ -281,12 +282,12 @@ function ContributionsCard({ view }: { view: ViewData }) {
       <div className="contribution-left">
         <div className="stats"><strong>{view.sampledCommits}</strong><span>{view.metricLabel}</span><strong>{best}</strong><span>Best day</span></div>
         <div className="heat-grid">
-          {view.heatmap.map((day) => {
+          {visibleDays.map((day) => {
             const level = day.count === 0 ? 0 : Math.max(1, Math.ceil((day.count / max) * 3))
             return <span className={`heat level-${level}`} key={day.date} tabIndex={0} aria-label={`${day.date}: ${day.count} ${view.metricLabel.toLowerCase()}`}><span className="tooltip">{day.date}<b>{day.count} {view.metricLabel.toLowerCase()}</b></span></span>
           })}
         </div>
-        <p>{view.heatmapNote}</p>
+        <p>Recent 8 weeks · {view.heatmapNote}</p>
       </div>
       <RadarChart radar={view.radar} />
     </TiltCard>
