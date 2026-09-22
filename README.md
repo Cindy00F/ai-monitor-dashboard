@@ -10,9 +10,10 @@ GitHub Actions 每小时运行一次 `scripts/collect-github-stats.mjs`，使用
 
 - 遍历账号下全部公开仓库，支持 All repositories 和单仓库筛选。
 - 每个仓库读取最近 30 条 Actions runs；安全卡展示失败、进行中和整体健康状态。
-- 提交热力图统计最近 56 天、每仓库最多 100 条由 Cindy00F 创作的公开 commit。这是 API 采样，不冒充 GitHub 官方 contribution 数字。
+- All repositories 热力图使用 GitHub GraphQL 返回的最近一年公开 contribution calendar，包含公开 commit、PR、Issue、Review 等 GitHub 计入的贡献。
+- 单仓库热力图使用 REST API 分页统计最近一年、每仓库最多 1000 条由 Cindy00F 创作且位于默认分支历史中的公开 commit；非默认分支和私有仓库活动不会混入。
 - 时间轴读取最多 3 页公开用户事件，仅保留 push、PR、review、issue、release 和 create。
-- 雷达将提交采样、PR/review 事件、issue 事件和 Actions 成功率归一化为 0–100，适合看活动结构，不用于绩效比较。
+- 雷达将公开 commit、PR/review 事件、issue 事件和 Actions 成功率归一化为 0–100，适合看活动结构，不用于绩效比较。
 - 仓库规模来自 GitHub API 的 `size`（KB），像素矩阵表示当前筛选范围相对最大仓库的规模。
 
 页面会显示更新时间、来源和 stale 状态。“Refresh data”只重新获取已部署 JSON；“Run collector”会打开 GitHub Actions 页面，由有权限的用户手动触发 workflow。静态 Pages 不会假装可以直接重跑 workflow 或修改 issue。

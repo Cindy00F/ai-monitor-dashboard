@@ -50,7 +50,7 @@ type Stats = {
   isFallback: boolean
   window: { days: number; commitLimitPerRepository: number; note: string }
   repositories: Repository[]
-  all: { repositoryCount: number; sizeKb: number; sampledCommits: number; runs: Run[]; events: GitHubEvent[] }
+  all: { repositoryCount: number; sizeKb: number; sampledCommits: number; profileContributions: number; profileHeatmap: HeatDay[]; runs: Run[]; events: GitHubEvent[] }
 }
 
 type ViewData = {
@@ -61,6 +61,8 @@ type ViewData = {
   events: GitHubEvent[]
   heatmap: HeatDay[]
   radar: Radar
+  metricLabel: string
+  heatmapNote: string
 }
 
 const actionsUrl = 'https://github.com/Cindy00F/ai-monitor-dashboard/actions/workflows/deploy-pages.yml'
@@ -270,21 +272,21 @@ function RadarChart({ radar }: { radar: Radar }) {
   )
 }
 
-function ContributionsCard({ view, windowDays }: { view: ViewData; windowDays: number }) {
+function ContributionsCard({ view }: { view: ViewData }) {
   const max = Math.max(1, ...view.heatmap.map((day) => day.count))
   const best = Math.max(0, ...view.heatmap.map((day) => day.count))
   return (
     <TiltCard className="contribution-card" label="Sampled commit activity and normalized radar">
       <div className="card-glow green-glow" />
       <div className="contribution-left">
-        <div className="stats"><strong>{view.sampledCommits}</strong><span>Sampled</span><strong>{best}</strong><span>Best day</span></div>
+        <div className="stats"><strong>{view.sampledCommits}</strong><span>{view.metricLabel}</span><strong>{best}</strong><span>Best day</span></div>
         <div className="heat-grid">
           {view.heatmap.map((day) => {
             const level = day.count === 0 ? 0 : Math.max(1, Math.ceil((day.count / max) * 3))
-            return <span className={`heat level-${level}`} key={day.date} tabIndex={0} aria-label={`${day.date}: ${day.count} sampled commits`}><span className="tooltip">{day.date}<b>{day.count} commits</b></span></span>
+            return <span className={`heat level-${level}`} key={day.date} tabIndex={0} aria-label={`${day.date}: ${day.count} ${view.metricLabel.toLowerCase()}`}><span className="tooltip">{day.date}<b>{day.count} {view.metricLabel.toLowerCase()}</b></span></span>
           })}
         </div>
-        <p>{windowDays}-day sample · up to 100 authored commits per repository</p>
+        <p>{view.heatmapNote}</p>
       </div>
       <RadarChart radar={view.radar} />
     </TiltCard>
@@ -308,11 +310,19 @@ export default function App() {
     if (!stats) return null
     if (selected !== 'all') {
       const repo = stats.repositories.find((item) => item.name === selected)
-      if (repo) return { name: repo.name, sizeKb: repo.sizeKb, sampledCommits: repo.sampledCommits, runs: repo.runs, events: repo.events, heatmap: repo.heatmap, radar: repo.radar }
+      if (repo) return {
+        name: repo.name, sizeKb: repo.sizeKb, sampledCommits: repo.sampledCommits, runs: repo.runs,
+        events: repo.events, heatmap: repo.heatmap, radar: repo.radar, metricLabel: 'Commits',
+        heatmapNote: `${stats.window.days}-day public default-branch commit window`,
+      }
     }
     return {
-      name: 'All repositories', sizeKb: stats.all.sizeKb, sampledCommits: stats.all.sampledCommits,
-      runs: stats.all.runs, events: stats.all.events, heatmap: mergeHeatmaps(stats.repositories), radar: combinedRadar(stats.repositories),
+      name: 'All repositories', sizeKb: stats.all.sizeKb,
+      runs: stats.all.runs, events: stats.all.events,
+      heatmap: stats.all.profileHeatmap?.length ? stats.all.profileHeatmap : mergeHeatmaps(stats.repositories),
+      radar: combinedRadar(stats.repositories), metricLabel: 'Contributions',
+      sampledCommits: stats.all.profileContributions ?? stats.all.sampledCommits,
+      heatmapNote: '1-year GitHub public contribution calendar',
     }
   }, [selected, stats])
 
@@ -342,7 +352,7 @@ export default function App() {
           <SecurityCard runs={view.runs} />
           <RepositoryCard view={view} repositories={stats.repositories} />
           <EventsCard events={view.events} />
-          <ContributionsCard view={view} windowDays={stats.window.days} />
+          <ContributionsCard view={view} />
         </div>
       ) : !loading && <div className="fatal-state"><strong>Dashboard data is unavailable.</strong><p>{error}</p><a href={allActionsUrl}>View Cindy00F repositories ↗</a></div>}
       </main>

@@ -1,5 +1,5 @@
-export const WINDOW_DAYS = 56
-export const HEATMAP_DAYS = 56
+export const WINDOW_DAYS = 365
+export const HEATMAP_DAYS = 365
 
 export function toDay(value) {
   return new Date(value).toISOString().slice(0, 10)

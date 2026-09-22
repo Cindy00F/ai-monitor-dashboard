@@ -2,12 +2,12 @@ import assert from 'node:assert/strict'
 import test from 'node:test'
 import { aggregateRepository, createHeatmap, normalizeEvent, radarFor, summarizeRuns } from './stats-core.mjs'
 
-test('creates a fixed 56-day heatmap and ignores missing dates', () => {
+test('creates a fixed 365-day heatmap and ignores missing dates', () => {
   const result = createHeatmap(
     [{ date: '2026-09-22T01:00:00Z' }, { date: '2026-09-22T22:00:00Z' }, { date: null }],
     new Date('2026-09-22T12:00:00Z'),
   )
-  assert.equal(result.length, 56)
+  assert.equal(result.length, 365)
   assert.deepEqual(result.at(-1), { date: '2026-09-22', count: 2 })
 })
 
@@ -34,5 +34,5 @@ test('radar values are bounded and aggregate handles null language', () => {
   const aggregate = aggregateRepository({ name: 'empty', html_url: 'https://github.com/x/empty', language: null, size: 0 }, [], [], [])
   assert.equal(aggregate.language, 'Other')
   assert.equal(aggregate.latestRun, null)
-  assert.equal(aggregate.heatmap.length, 56)
+  assert.equal(aggregate.heatmap.length, 365)
 })
