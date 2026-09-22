@@ -232,11 +232,14 @@ function EventsCard({ events }: { events: GitHubEvent[] }) {
     <TiltCard className="schedule-card" label="Recent public GitHub activity">
       <div className="schedule-head"><strong>Recent activity</strong><span>{events.length} events</span></div>
       <div className="event-list">
-        {events.length ? events.slice(0, 4).map((event) => (
-          <a className={`timeline-event ${event.type}`} href={event.url} target="_blank" rel="noreferrer" key={event.id}>
+        <div className="timeline-grid" aria-hidden="true" />
+        {events.length ? events.slice(0, 3).map((event, index) => (
+          <a className={`timeline-event event-${index + 1} ${event.type}`} href={event.url} target="_blank" rel="noreferrer" key={event.id}>
             <span>{event.label}</span><strong>{event.repo}</strong><time>{relativeTime(event.createdAt)}</time>
           </a>
-        )) : <div className="empty-state">No matching public push, PR, issue or release events.</div>}
+        )) : <div className="empty-state">No matching public activity.</div>}
+        <div className="timeline-cursor" aria-hidden="true" />
+        <div className="timeline-labels" aria-hidden="true"><span>older</span><span>recent</span><span>now</span></div>
       </div>
     </TiltCard>
   )
@@ -290,8 +293,16 @@ function ContributionsCard({ view, windowDays }: { view: ViewData; windowDays: n
 
 export default function App() {
   const { stats, loading, error, refresh } = useStats()
-  const [selected, setSelected] = useState('all')
+  const [selected, setSelected] = useState(() => new URLSearchParams(window.location.search).get('repo') || 'all')
   const stale = stats ? stats.isFallback || Date.now() - Date.parse(stats.generatedAt) > 2 * 3600_000 : false
+
+  const selectRepository = (repository: string) => {
+    setSelected(repository)
+    const url = new URL(window.location.href)
+    if (repository === 'all') url.searchParams.delete('repo')
+    else url.searchParams.set('repo', repository)
+    window.history.replaceState(null, '', url)
+  }
 
   const view = useMemo<ViewData | null>(() => {
     if (!stats) return null
@@ -306,25 +317,27 @@ export default function App() {
   }, [selected, stats])
 
   return (
-    <main>
+    <>
+      <a className="skip-link" href="#dashboard">Skip to dashboard</a>
+      <main>
       <header className="dashboard-toolbar">
-        <div><p>Cindy00F / public GitHub telemetry</p><h1>Development pulse</h1></div>
+        <div className="brand-line"><span className="live-orb" aria-hidden="true" /><h1>Cindy00F</h1><p>GitHub pulse</p></div>
         <div className="toolbar-actions">
-          <label>Repository
-            <select value={selected} onChange={(event) => setSelected(event.target.value)} disabled={!stats}>
+          <label><span className="sr-only">Repository</span>
+            <select aria-label="Filter dashboard by repository" value={selected} onChange={(event) => selectRepository(event.target.value)} disabled={!stats}>
               <option value="all">All repositories</option>
               {stats?.repositories.map((repo) => <option value={repo.name} key={repo.name}>{repo.name}</option>)}
             </select>
           </label>
-          <button onClick={() => void refresh()} disabled={loading} aria-label="Reload deployed GitHub statistics">{loading ? 'Refreshing…' : 'Refresh data'}</button>
-          <a href={actionsUrl} target="_blank" rel="noreferrer">Run collector ↗</a>
+          <button className="icon-action" onClick={() => void refresh()} disabled={loading} aria-label="Reload deployed GitHub statistics" title="Refresh deployed data">{loading ? '…' : '↻'}</button>
+          <a className="icon-action" href={actionsUrl} target="_blank" rel="noreferrer" aria-label="Open GitHub Actions collector" title="Open GitHub Actions">↗</a>
         </div>
         <div className={`data-status ${stale ? 'stale' : ''}`} role="status">
-          {error ? `Data error: ${error}` : stats ? `${stale ? 'Stale snapshot' : 'Current'} · ${stats.source} · updated ${new Date(stats.generatedAt).toLocaleString()}` : 'Loading GitHub data…'}
+          {error ? `Data error · ${error}` : stats ? `${stale ? 'Snapshot' : 'Live'} · ${new Intl.DateTimeFormat(undefined, { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' }).format(new Date(stats.generatedAt))}` : 'Loading…'}
         </div>
       </header>
       {view && stats ? (
-        <div className="dashboard">
+        <div className="dashboard" id="dashboard">
           <RunCard run={view.runs[0] ?? null} />
           <SecurityCard runs={view.runs} />
           <RepositoryCard view={view} repositories={stats.repositories} />
@@ -332,6 +345,7 @@ export default function App() {
           <ContributionsCard view={view} windowDays={stats.window.days} />
         </div>
       ) : !loading && <div className="fatal-state"><strong>Dashboard data is unavailable.</strong><p>{error}</p><a href={allActionsUrl}>View Cindy00F repositories ↗</a></div>}
-    </main>
+      </main>
+    </>
   )
 }
