@@ -294,6 +294,63 @@ function ContributionsCard({ view }: { view: ViewData }) {
   )
 }
 
+function BrainIcon() {
+  return (
+    <svg viewBox="0 0 38 38" aria-hidden="true">
+      <path d="M18.8 8.1a5.8 5.8 0 0 0-10.7 3.1A5.6 5.6 0 0 0 5 20.9a5.8 5.8 0 0 0 5.4 8 5.8 5.8 0 0 0 8.4-5.2V8.1Zm.4 0a5.8 5.8 0 0 1 10.7 3.1 5.6 5.6 0 0 1 3.1 9.7 5.8 5.8 0 0 1-5.4 8 5.8 5.8 0 0 1-8.4-5.2V8.1Z" />
+      <path d="M12.2 12.5c3.2.3 4.2 2.3 3.8 5.2m-5.7 5.8c3.1-.1 5 1.2 5.7 3.7m9.8-14.7c-3.2.3-4.2 2.3-3.8 5.2m5.7 5.8c-3.1-.1-5 1.2-5.7 3.7" />
+    </svg>
+  )
+}
+
+function EffortCard() {
+  const [effort, setEffort] = useState(72)
+  const [showHelp, setShowHelp] = useState(false)
+  const pixels = useMemo(() => Array.from({ length: 72 }, (_, index) => index), [])
+  const mode = effort < 28 ? 'Faster' : effort < 62 ? 'Balanced' : effort < 88 ? 'Smarter' : 'Galaxy'
+  const recommendation = effort >= 58 && effort <= 78
+  const style = {
+    '--effort': `${effort}%`,
+    '--energy': effort / 100,
+  } as CSSProperties
+
+  return (
+    <TiltCard className="effort-card" label="AI effort control">
+      <div className="effort-aura" aria-hidden="true" />
+      <div className="effort-head">
+        <div><span>Effort</span><strong>{mode}</strong></div>
+        <button type="button" className="effort-help" aria-label="Explain effort control" aria-expanded={showHelp} onClick={() => setShowHelp((value) => !value)}>?</button>
+      </div>
+      <div className="effort-labels" aria-hidden="true"><span>Faster</span><span>Smarter</span></div>
+      <div className="effort-control" style={style}>
+        <div className="effort-pixels" aria-hidden="true">
+          {pixels.map((pixel) => {
+            const threshold = (pixel / (pixels.length - 1)) * 100
+            const active = threshold <= effort
+            return <span key={pixel} className={active ? 'lit' : ''} style={{ '--pixel-seed': (pixel * 17) % 11 } as CSSProperties} />
+          })}
+        </div>
+        <div className="effort-beam" aria-hidden="true" />
+        <div className="brain-thumb" aria-hidden="true"><BrainIcon /></div>
+        <input
+          type="range"
+          min="0"
+          max="100"
+          value={effort}
+          onInput={(event) => setEffort(Number(event.currentTarget.value))}
+          aria-label="AI effort from faster to smarter"
+          aria-valuetext={`${mode}, ${effort} percent`}
+        />
+      </div>
+      <div className="effort-foot">
+        <span className={recommendation ? 'recommended active' : 'recommended'}>{recommendation ? 'Recommended' : `${effort}% effort`}</span>
+        <output aria-live="polite">{mode}</output>
+      </div>
+      {showHelp && <p className="effort-help-text">Lower values favor speed. Higher values add reasoning depth and visual energy.</p>}
+    </TiltCard>
+  )
+}
+
 export default function App() {
   const { stats, loading, error, refresh } = useStats()
   const [selected, setSelected] = useState(() => new URLSearchParams(window.location.search).get('repo') || 'all')
@@ -354,6 +411,7 @@ export default function App() {
           <RepositoryCard view={view} repositories={stats.repositories} />
           <EventsCard events={view.events} />
           <ContributionsCard view={view} />
+          <EffortCard />
         </div>
       ) : !loading && <div className="fatal-state"><strong>Dashboard data is unavailable.</strong><p>{error}</p><a href={allActionsUrl}>View Cindy00F repositories ↗</a></div>}
       </main>

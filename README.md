@@ -18,6 +18,8 @@ GitHub Actions 每小时运行一次 `scripts/collect-github-stats.mjs`，使用
 
 页面会显示更新时间、来源和 stale 状态。“Refresh data”只重新获取已部署 JSON；“Run collector”会打开 GitHub Actions 页面，由有权限的用户手动触发 workflow。静态 Pages 不会假装可以直接重跑 workflow 或修改 issue。
 
+页面底部另有一张独立的 **Effort** 微交互卡片。它不修改 GitHub 数据，而是演示 AI 产品中从 Faster 到 Smarter 的参数控制：原生滑块会同步驱动像素密度、紫蓝渐变、脑形滑块、光晕和粒子轨道；键盘、触屏及 `prefers-reduced-motion` 均受支持。
+
 ## 本地数据
 
 仓库内保留一份真实结构的 fallback snapshot，方便无凭据开发。没有 `GH_TOKEN` 时，`npm run collect` 会明确提示并保留它；提供 token 后会实时采集，任何 API 错误都会让命令失败。
