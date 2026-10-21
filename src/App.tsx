@@ -307,30 +307,53 @@ function EffortCard() {
   const [effort, setEffort] = useState(72)
   const [showHelp, setShowHelp] = useState(false)
   const pixels = useMemo(() => Array.from({ length: 72 }, (_, index) => index), [])
+  const rays = useMemo(() => Array.from({ length: 18 }, (_, index) => index), [])
+  const particles = useMemo(() => Array.from({ length: 12 }, (_, index) => index), [])
   const mode = effort < 28 ? 'Faster' : effort < 62 ? 'Balanced' : effort < 88 ? 'Smarter' : 'Galaxy'
   const recommendation = effort >= 58 && effort <= 78
+  const pixelOpacity = Math.max(0.035, Math.min(1, (effort - 68) / 26))
+  const burstOpacity = Math.max(0, Math.min(1, (effort - 78) / 16))
+  const smoothOpacity = Math.max(0.14, 0.9 - effort * 0.0075)
   const style = {
     '--effort': `${effort}%`,
     '--energy': effort / 100,
+    '--brain-hue': 330 - effort * 0.78,
+    '--pixel-opacity': pixelOpacity,
+    '--burst-opacity': burstOpacity,
+    '--smooth-opacity': smoothOpacity,
   } as CSSProperties
 
   return (
     <TiltCard className="effort-card" label="AI effort control">
       <div className="effort-aura" aria-hidden="true" />
       <div className="effort-head">
-        <div><span>Effort</span><strong>{mode}</strong></div>
+        <div>
+          <span>Effort</span>
+          <span className="effort-mode"><i aria-hidden="true">{mode}</i><strong>{mode}</strong></span>
+        </div>
         <button type="button" className="effort-help" aria-label="Explain effort control" aria-expanded={showHelp} onClick={() => setShowHelp((value) => !value)}>?</button>
       </div>
       <div className="effort-labels" aria-hidden="true"><span>Faster</span><span>Smarter</span></div>
       <div className="effort-control" style={style}>
+        <div className="effort-smooth" aria-hidden="true" />
         <div className="effort-pixels" aria-hidden="true">
           {pixels.map((pixel) => {
             const threshold = (pixel / (pixels.length - 1)) * 100
             const active = threshold <= effort
-            return <span key={pixel} className={active ? 'lit' : ''} style={{ '--pixel-seed': (pixel * 17) % 11 } as CSSProperties} />
+            return (
+              <span
+                key={pixel}
+                className={active ? 'lit' : ''}
+                style={{ '--pixel-seed': (pixel * 17) % 11, '--pixel-position': pixel / (pixels.length - 1) } as CSSProperties}
+              />
+            )
           })}
         </div>
-        <div className="effort-beam" aria-hidden="true" />
+        <div className="effort-ticks" aria-hidden="true"><span /><span /><span /><span /></div>
+        <div className="effort-burst" aria-hidden="true">
+          {rays.map((ray) => <i className="effort-ray" key={ray} style={{ '--ray': ray, '--ray-length': 12 + (ray * 11) % 22 } as CSSProperties} />)}
+          {particles.map((particle) => <b key={particle} style={{ '--particle': particle, '--distance': 18 + (particle * 13) % 30 } as CSSProperties} />)}
+        </div>
         <div className="brain-thumb" aria-hidden="true"><BrainIcon /></div>
         <input
           type="range"
@@ -344,7 +367,7 @@ function EffortCard() {
       </div>
       <div className="effort-foot">
         <span className={recommendation ? 'recommended active' : 'recommended'}>{recommendation ? 'Recommended' : `${effort}% effort`}</span>
-        <output aria-live="polite">{mode}</output>
+        <output aria-live="polite">{effort}</output>
       </div>
       {showHelp && <p className="effort-help-text">Lower values favor speed. Higher values add reasoning depth and visual energy.</p>}
     </TiltCard>
